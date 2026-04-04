@@ -55,7 +55,7 @@ config PWM
 config LED
     default y
 
-config PROSPECTOR_USE_AMBIENT_LIGHT_SENSOR
+config PROSPECTOR_BRIGHTNESS_AUTO
     select SENSOR
     select APDS9960
 

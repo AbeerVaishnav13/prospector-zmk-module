@@ -1,0 +1,5 @@
+description: Increase display brightness
+
+compatible: "zmk,behavior-brightness-inc"
+
+include: zero_param.yaml

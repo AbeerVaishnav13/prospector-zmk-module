@@ -54,4 +54,15 @@
       mod-active-color = <0x38FFB3>;
       mod-inactive-color = <0xB0B0B0>;
    };
+
+   behaviors {
+      inc_bri: inc_bri {
+         compatible = "zmk,behavior-brightness-inc";
+         #binding-cells = <0>;
+      };
+      dec_bri: dec_bri {
+         compatible = "zmk,behavior-brightness-dec";
+         #binding-cells = <0>;
+      };
+   };
 };

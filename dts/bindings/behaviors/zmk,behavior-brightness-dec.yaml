@@ -1,0 +1,5 @@
+description: Decrease display brightness
+
+compatible: "zmk,behavior-brightness-dec"
+
+include: zero_param.yaml

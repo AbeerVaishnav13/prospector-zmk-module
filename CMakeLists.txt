@@ -18,4 +18,10 @@ if(CONFIG_SHIELD_PROSPECTOR_ADAPTER)
         zephyr_library_sources(src/events/split_central_status_changed.c)
         zephyr_library_sources(src/split/bluetooth/central_status_changed_observer.c)
 
+        if(CONFIG_PROSPECTOR_BRIGHTNESS_MANUAL)
+                target_sources(app PRIVATE src/behaviors/behavior_brightness.c)
+                target_include_directories(app PRIVATE
+                        ${ZEPHYR_CURRENT_MODULE_DIR}/boards/shields/prospector_adapter/include)
+        endif()
+
 endif()

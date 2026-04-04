@@ -66,15 +66,32 @@ config PROSPECTOR_MODIFIER_OS_MAC
 
 endchoice
 
-config PROSPECTOR_USE_AMBIENT_LIGHT_SENSOR
-    bool "Use ambient light sensor for auto brightness"
-    default y
+choice PROSPECTOR_BRIGHTNESS_MODE
+    prompt "Display brightness mode"
+    default PROSPECTOR_BRIGHTNESS_AUTO
+
+config PROSPECTOR_BRIGHTNESS_AUTO
+    bool "Auto (ambient light sensor)"
+
+config PROSPECTOR_BRIGHTNESS_FIXED
+    bool "Fixed brightness"
+
+config PROSPECTOR_BRIGHTNESS_MANUAL
+    bool "Manual (keyboard-controlled)"
+
+endchoice
 
 config PROSPECTOR_FIXED_BRIGHTNESS
-    int "Fixed display brightness"
+    int "Initial display brightness (1-100)"
     default 50
     range 1 100
-    depends on !PROSPECTOR_USE_AMBIENT_LIGHT_SENSOR
+    depends on !PROSPECTOR_BRIGHTNESS_AUTO
+
+config PROSPECTOR_BRIGHTNESS_STEP
+    int "Brightness adjustment step size"
+    default 10
+    range 1 50
+    depends on PROSPECTOR_BRIGHTNESS_MANUAL
 
 config PROSPECTOR_LAYER_NAME_UPPERCASE
     bool "Display layer names in uppercase"
