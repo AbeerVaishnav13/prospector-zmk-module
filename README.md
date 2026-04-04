@@ -26,6 +26,7 @@ This is a [ZMK module](https://zmk.dev/docs/features/modules) that provides cust
 - BLE profile and output indicator
 - Active modifier display
 - Caps word indicator
+- Keyboard-controlled display brightness
 
 ## Installation
 
@@ -95,7 +96,7 @@ keymap {
 
 To customize, add config options to your `.conf` file:
 ```ini
-CONFIG_PROSPECTOR_USE_AMBIENT_LIGHT_SENSOR=n
+CONFIG_PROSPECTOR_BRIGHTNESS_FIXED=y
 CONFIG_PROSPECTOR_FIXED_BRIGHTNESS=80
 ```
 
@@ -103,9 +104,33 @@ CONFIG_PROSPECTOR_FIXED_BRIGHTNESS=80
 | Name | Description | Default |
 | ---- | ----------- | ------- |
 | `CONFIG_PROSPECTOR_ROTATE_DISPLAY_180` | Rotate the display 180 degrees | n |
-| `CONFIG_PROSPECTOR_USE_AMBIENT_LIGHT_SENSOR` | Use ambient light sensor for auto brightness | y |
-| `CONFIG_PROSPECTOR_FIXED_BRIGHTNESS` | Fixed display brightness when not using ambient light sensor | 50 (1-100) |
 | `CONFIG_PROSPECTOR_LAYER_NAME_UPPERCASE` | Convert layer names to uppercase (Operator and Radii only) | y |
+
+### Brightness
+
+Display brightness has three mutually exclusive modes, selected via Kconfig:
+
+| Name | Description | Default |
+| ---- | ----------- | ------- |
+| `CONFIG_PROSPECTOR_BRIGHTNESS_AUTO` | Auto brightness using the ambient light sensor | y |
+| `CONFIG_PROSPECTOR_BRIGHTNESS_FIXED` | Fixed brightness set at compile time | n |
+| `CONFIG_PROSPECTOR_BRIGHTNESS_MANUAL` | Manual brightness controlled from the keyboard at runtime | n |
+| `CONFIG_PROSPECTOR_FIXED_BRIGHTNESS` | Initial brightness level (used by fixed and manual modes) | 50 (1-100) |
+| `CONFIG_PROSPECTOR_BRIGHTNESS_STEP` | Step size for manual brightness adjustment (manual mode only) | 10 (1-50) |
+
+To use manual brightness control, add to your `.conf`:
+```ini
+CONFIG_PROSPECTOR_BRIGHTNESS_MANUAL=y
+CONFIG_PROSPECTOR_FIXED_BRIGHTNESS=50
+CONFIG_PROSPECTOR_BRIGHTNESS_STEP=10
+```
+
+Then include the brightness behaviors in your keymap:
+```c
+#include <behaviors/brightness.dtsi>
+```
+
+Use `&inc_bri` and `&dec_bri` in any layer binding to increase and decrease brightness.
 
 ### Modifiers
 | Name | Description | Default |
