@@ -53,8 +53,8 @@ static void set_ble_btn_state(lv_obj_t *btn, bool active) {
     }
 }
 
-static void set_slot_state(lv_obj_t *slot, bool active, bool is_ble, int profile_index) {
-    if (active && is_ble) {
+static void set_slot_state(lv_obj_t *slot, bool active, int profile_index) {
+    if (active) {
         bool is_connected = zmk_ble_profile_is_connected(profile_index);
         bool is_open = zmk_ble_profile_is_open(profile_index);
 
@@ -65,8 +65,6 @@ static void set_slot_state(lv_obj_t *slot, bool active, bool is_ble, int profile
         } else {
             lv_obj_set_style_bg_color(slot, lv_color_hex(DISPLAY_COLOR_SLOT_DISCONNECTED_BG), LV_PART_MAIN);
         }
-    } else if (active) {
-        lv_obj_set_style_bg_color(slot, lv_color_hex(DISPLAY_COLOR_SLOT_ACTIVE_BG), LV_PART_MAIN);
     } else {
         lv_obj_set_style_bg_color(slot, lv_color_hex(DISPLAY_COLOR_SLOT_INACTIVE_BG), LV_PART_MAIN);
     }
@@ -78,7 +76,7 @@ static void update_output_widget(struct zmk_widget_output *widget) {
     set_ble_btn_state(widget->ble_btn, !is_usb);
 
     for (int i = 0; i < ZMK_BLE_PROFILE_COUNT; i++) {
-        set_slot_state(widget->slots[i], (i == active_profile_index), !is_usb, i);
+        set_slot_state(widget->slots[i], (i == active_profile_index), i);
     }
 }
 
