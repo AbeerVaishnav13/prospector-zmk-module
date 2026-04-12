@@ -181,7 +181,7 @@ int zmk_widget_wpm_meter_init(struct zmk_widget_wpm_meter *widget, lv_obj_t *par
 
     widget->peak_indicator = lv_obj_create(widget->obj);
     lv_obj_set_size(widget->peak_indicator, 4, bar_height);
-    lv_obj_set_style_bg_color(widget->peak_indicator, lv_color_hex(0x505050), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(widget->peak_indicator, lv_color_hex(DISPLAY_COLOR_WPM_PEAK), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(widget->peak_indicator, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_set_style_border_width(widget->peak_indicator, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(widget->peak_indicator, 1, LV_PART_MAIN);
