@@ -54,19 +54,39 @@ static void set_ble_btn_state(lv_obj_t *btn, bool active) {
 }
 
 static void set_slot_state(lv_obj_t *slot, bool active, int profile_index) {
-    if (active) {
-        bool is_connected = zmk_ble_profile_is_connected(profile_index);
-        bool is_open = zmk_ble_profile_is_open(profile_index);
+    bool is_open = zmk_ble_profile_is_open(profile_index);
+    lv_obj_t *label = lv_obj_get_child(slot, 0);
 
-        if (is_connected) {
-            lv_obj_set_style_bg_color(slot, lv_color_hex(DISPLAY_COLOR_SLOT_CONNECTED_BG), LV_PART_MAIN);
-        } else if (is_open) {
-            lv_obj_set_style_bg_color(slot, lv_color_hex(DISPLAY_COLOR_SLOT_UNPAIRED_BG), LV_PART_MAIN);
+    if (active) {
+        lv_obj_set_style_bg_opa(slot, LV_OPA_COVER, LV_PART_MAIN);
+        lv_obj_set_style_border_width(slot, 0, LV_PART_MAIN);
+        if (is_open) {
+            lv_obj_set_style_bg_color(slot, lv_color_hex(DISPLAY_COLOR_SLOT_UNPAIRED), LV_PART_MAIN);
         } else {
-            lv_obj_set_style_bg_color(slot, lv_color_hex(DISPLAY_COLOR_SLOT_DISCONNECTED_BG), LV_PART_MAIN);
+            bool is_connected = zmk_ble_profile_is_connected(profile_index);
+            if (is_connected) {
+                lv_obj_set_style_bg_color(slot, lv_color_hex(DISPLAY_COLOR_SLOT_CONNECTED_BG), LV_PART_MAIN);
+            } else {
+                lv_obj_set_style_bg_color(slot, lv_color_hex(DISPLAY_COLOR_SLOT_DISCONNECTED_BG), LV_PART_MAIN);
+            }
+        }
+        if (label) {
+            lv_obj_set_style_text_color(label, lv_color_hex(DISPLAY_COLOR_SLOT_TEXT), LV_PART_MAIN);
         }
     } else {
-        lv_obj_set_style_bg_color(slot, lv_color_hex(DISPLAY_COLOR_SLOT_INACTIVE_BG), LV_PART_MAIN);
+        lv_obj_set_style_bg_opa(slot, LV_OPA_TRANSP, LV_PART_MAIN);
+        lv_obj_set_style_border_width(slot, 2, LV_PART_MAIN);
+        if (is_open) {
+            lv_obj_set_style_border_color(slot, lv_color_hex(DISPLAY_COLOR_SLOT_UNPAIRED), LV_PART_MAIN);
+            if (label) {
+                lv_obj_set_style_text_color(label, lv_color_hex(DISPLAY_COLOR_SLOT_UNPAIRED), LV_PART_MAIN);
+            }
+        } else {
+            lv_obj_set_style_border_color(slot, lv_color_hex(DISPLAY_COLOR_SLOT_PAIRED), LV_PART_MAIN);
+            if (label) {
+                lv_obj_set_style_text_color(label, lv_color_hex(DISPLAY_COLOR_SLOT_PAIRED), LV_PART_MAIN);
+            }
+        }
     }
 }
 
