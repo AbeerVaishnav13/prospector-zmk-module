@@ -5,6 +5,7 @@
 #include "layer_display.h"
 #include "battery_circles.h"
 #include "output.h"
+#include "theme_cycle.h"
 
 #include <fonts.h>
 
@@ -33,6 +34,8 @@ lv_obj_t *zmk_display_status_screen() {
 
     zmk_widget_output_init(&output_widget, screen);
     lv_obj_set_pos(zmk_widget_output_obj(&output_widget), 148, 170);
+
+    theme_cycle_start();
 
     return screen;
 }

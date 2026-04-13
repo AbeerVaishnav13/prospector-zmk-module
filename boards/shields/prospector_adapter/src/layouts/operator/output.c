@@ -9,6 +9,7 @@
 
 #include <fonts.h>
 #include "display_colors.h"
+#include "theme_cycle.h"
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
@@ -97,6 +98,13 @@ static void update_output_widget(struct zmk_widget_output *widget) {
 
     for (int i = 0; i < ZMK_BLE_PROFILE_COUNT; i++) {
         set_slot_state(widget->slots[i], (i == active_profile_index), i);
+    }
+}
+
+static void output_theme_refresh(void) {
+    struct zmk_widget_output *widget;
+    SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) {
+        update_output_widget(widget);
     }
 }
 
@@ -200,6 +208,8 @@ int zmk_widget_output_init(struct zmk_widget_output *widget, lv_obj_t *parent) {
     update_output_widget(widget);
 
     sys_slist_append(&widgets, &widget->node);
+
+    theme_cycle_register_refresh(output_theme_refresh);
 
     return 0;
 }

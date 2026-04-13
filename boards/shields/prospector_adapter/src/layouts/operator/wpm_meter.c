@@ -11,6 +11,7 @@
 
 #include <fonts.h>
 #include "display_colors.h"
+#include "theme_cycle.h"
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 static struct k_work_delayable wpm_smooth_work;
@@ -64,6 +65,20 @@ static void wpm_meter_render(int active_bars) {
         char wpm_text[4];
         snprintf(wpm_text, sizeof(wpm_text), "%d", (int)(displayed_wpm + 0.5f));
         lv_label_set_text(widget->wpm_label, wpm_text);
+    }
+}
+
+static void wpm_meter_theme_refresh(void) {
+    struct zmk_widget_wpm_meter *widget;
+    SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) {
+        for (int i = 0; i < WPM_BAR_COUNT; i++) {
+            lv_color_t color = (i < prev_active_bars)
+                ? lv_color_hex(DISPLAY_COLOR_WPM_BAR_ACTIVE)
+                : lv_color_hex(DISPLAY_COLOR_WPM_BAR_INACTIVE);
+            lv_obj_set_style_bg_color(widget->bars[i], color, LV_PART_MAIN);
+        }
+        lv_obj_set_style_text_color(widget->wpm_label, lv_color_hex(DISPLAY_COLOR_WPM_TEXT), LV_PART_MAIN);
+        lv_obj_set_style_text_color(widget->layer_label, lv_color_hex(DISPLAY_COLOR_LAYER_TEXT), LV_PART_MAIN);
     }
 }
 
@@ -213,6 +228,8 @@ int zmk_widget_wpm_meter_init(struct zmk_widget_wpm_meter *widget, lv_obj_t *par
     widget_wpm_meter_layer_init();
 
     k_work_init_delayable(&wpm_smooth_work, wpm_smooth_work_handler);
+
+    theme_cycle_register_refresh(wpm_meter_theme_refresh);
 
     return 0;
 }
