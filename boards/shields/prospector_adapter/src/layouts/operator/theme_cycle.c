@@ -2,11 +2,15 @@
 
 #include <zephyr/kernel.h>
 
-#define THEME_CYCLE_TICK_MS   2000
-#define THEME_CYCLE_PERIOD_MS (15 * 60 * 1000)
+#define THEME_CYCLE_TICK_MS   500
+#define THEME_CYCLE_PERIOD_MS (60 * 1000)
 #define THEME_CYCLE_STEPS     (THEME_CYCLE_PERIOD_MS / THEME_CYCLE_TICK_MS)
 #define THEME_CYCLE_MAX_CBS   8
 #define THEME_START_HUE_X100  12000
+
+#define LUMA_FLOOR_DARK   220000
+#define LUMA_FLOOR_MED    500000
+#define LUMA_FLOOR_BRIGHT 1100000
 
 uint32_t theme_dyn_dark   = 0x003B00;
 uint32_t theme_dyn_med    = 0x008F00;
@@ -42,13 +46,50 @@ static uint32_t hsv_to_rgb(int32_t h_x100, uint8_t v) {
     return (r << 16) | (g << 8) | b;
 }
 
+static uint32_t hue_tier_color(int32_t h_x100, uint8_t v, int32_t floor) {
+    uint32_t rgb = hsv_to_rgb(h_x100, v);
+    int32_t r = (rgb >> 16) & 0xFF;
+    int32_t g = (rgb >> 8) & 0xFF;
+    int32_t b = rgb & 0xFF;
+    int32_t luma = 2126 * r + 7152 * g + 722 * b;
+
+    if (luma >= floor) {
+        return rgb;
+    }
+
+    if (luma > 0) {
+        int32_t v_new = ((int32_t)v * floor) / luma;
+        if (v_new <= 255) {
+            return hsv_to_rgb(h_x100, (uint8_t)v_new);
+        }
+    }
+
+    uint32_t rgb255 = hsv_to_rgb(h_x100, 255);
+    int32_t r255 = (rgb255 >> 16) & 0xFF;
+    int32_t g255 = (rgb255 >> 8) & 0xFF;
+    int32_t b255 = rgb255 & 0xFF;
+    int32_t luma255 = 2126 * r255 + 7152 * g255 + 722 * b255;
+    int32_t w_num = floor - luma255;
+    int32_t w_den = 2550000 - luma255;
+    if (w_den <= 0 || w_num <= 0) {
+        return rgb255;
+    }
+    int32_t rr = r255 + (w_num * (255 - r255)) / w_den;
+    int32_t gg = g255 + (w_num * (255 - g255)) / w_den;
+    int32_t bb = b255 + (w_num * (255 - b255)) / w_den;
+    if (rr > 255) rr = 255;
+    if (gg > 255) gg = 255;
+    if (bb > 255) bb = 255;
+    return ((uint32_t)rr << 16) | ((uint32_t)gg << 8) | (uint32_t)bb;
+}
+
 static void theme_work_handler(struct k_work *work) {
     hue_x100 += 36000 / THEME_CYCLE_STEPS;
     if (hue_x100 >= 36000) hue_x100 -= 36000;
 
-    theme_dyn_dark   = hsv_to_rgb(hue_x100, 59);
-    theme_dyn_med    = hsv_to_rgb(hue_x100, 143);
-    theme_dyn_bright = hsv_to_rgb(hue_x100, 255);
+    theme_dyn_dark   = hue_tier_color(hue_x100, 59,  LUMA_FLOOR_DARK);
+    theme_dyn_med    = hue_tier_color(hue_x100, 143, LUMA_FLOOR_MED);
+    theme_dyn_bright = hue_tier_color(hue_x100, 255, LUMA_FLOOR_BRIGHT);
 
     for (int i = 0; i < refresh_cb_count; i++) {
         if (refresh_cbs[i]) {
