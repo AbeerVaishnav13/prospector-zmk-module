@@ -23,6 +23,7 @@ struct operator_theme_colors {
  * with luma floor. That keeps each predefined layer color visually close to
  * the previous color-wheel shades, only without time-based hue cycling.
  */
+static const struct operator_theme_colors operator_theme_white   = {0x0D0D0D, 0x3B3B3B, 0x8F8F8F, 0xFFFFFF};
 static const struct operator_theme_colors operator_theme_yellow  = {0x0D0D00, 0x3B3B00, 0x8F8F00, 0xFFFF00};
 static const struct operator_theme_colors operator_theme_green   = {0x000D00, 0x003B00, 0x008F00, 0x00FF00};
 static const struct operator_theme_colors operator_theme_orange  = {0x0D0600, 0x3B1D00, 0x8F4700, 0xFF7F00};
@@ -49,7 +50,7 @@ static void apply_theme_for_layer(uint8_t layer_index);
 static const struct operator_theme_colors *theme_for_layer_index(uint8_t layer_index) {
     switch (layer_index) {
     case 0:  /* home */
-        return &operator_theme_yellow;
+        return &operator_theme_white;
     case 1:  /* num_sym */
         return &operator_theme_green;
     case 2:  /* graphite */
