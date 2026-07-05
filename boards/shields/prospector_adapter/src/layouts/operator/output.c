@@ -94,11 +94,15 @@ static void set_slot_state(lv_obj_t *slot, bool active, int profile_index) {
 static void update_output_widget(struct zmk_widget_output *widget) {
     bool is_usb = (active_transport == ZMK_TRANSPORT_USB);
     set_usb_btn_state(widget->usb_btn, is_usb);
+    lv_obj_invalidate(widget->usb_btn);
     set_ble_btn_state(widget->ble_btn, !is_usb);
+    lv_obj_invalidate(widget->ble_btn);
 
     for (int i = 0; i < ZMK_BLE_PROFILE_COUNT; i++) {
         set_slot_state(widget->slots[i], (i == active_profile_index), i);
+        lv_obj_invalidate(widget->slots[i]);
     }
+    lv_obj_invalidate(widget->obj);
 }
 
 static void output_theme_refresh(void) {

@@ -298,6 +298,11 @@ static void battery_circles_theme_refresh(void) {
     for (int i = 0; i < PERIPHERAL_COUNT; i++) {
         update_peripheral_display(i);
     }
+
+    struct zmk_widget_battery_circles *widget;
+    SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) {
+        lv_obj_invalidate(widget->obj);
+    }
 }
 
 static void set_battery_level(uint8_t source, uint8_t level) {

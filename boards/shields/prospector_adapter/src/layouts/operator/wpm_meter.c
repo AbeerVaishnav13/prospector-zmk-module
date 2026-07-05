@@ -76,9 +76,15 @@ static void wpm_meter_theme_refresh(void) {
                 ? lv_color_hex(DISPLAY_COLOR_WPM_BAR_ACTIVE)
                 : lv_color_hex(DISPLAY_COLOR_WPM_BAR_INACTIVE);
             lv_obj_set_style_bg_color(widget->bars[i], color, LV_PART_MAIN);
+            lv_obj_invalidate(widget->bars[i]);
         }
+        lv_obj_set_style_bg_color(widget->peak_indicator, lv_color_hex(DISPLAY_COLOR_WPM_PEAK), LV_PART_MAIN);
+        lv_obj_invalidate(widget->peak_indicator);
         lv_obj_set_style_text_color(widget->wpm_label, lv_color_hex(DISPLAY_COLOR_WPM_TEXT), LV_PART_MAIN);
+        lv_obj_invalidate(widget->wpm_label);
         lv_obj_set_style_text_color(widget->layer_label, lv_color_hex(DISPLAY_COLOR_LAYER_TEXT), LV_PART_MAIN);
+        lv_obj_invalidate(widget->layer_label);
+        lv_obj_invalidate(widget->obj);
     }
 }
 

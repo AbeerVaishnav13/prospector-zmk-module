@@ -24,7 +24,9 @@ static void layer_display_apply(struct layer_display_state state) {
                 ? lv_color_hex(DISPLAY_COLOR_LAYER_DOT_ACTIVE)
                 : lv_color_hex(DISPLAY_COLOR_LAYER_DOT_INACTIVE);
             lv_obj_set_style_bg_color(widget->dots[i], color, LV_PART_MAIN);
+            lv_obj_invalidate(widget->dots[i]);
         }
+        lv_obj_invalidate(widget->obj);
     }
 }
 

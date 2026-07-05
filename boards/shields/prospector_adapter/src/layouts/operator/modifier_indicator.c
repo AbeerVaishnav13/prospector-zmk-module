@@ -32,6 +32,7 @@ static void set_modifier_color(lv_obj_t *label, bool active) {
     lv_color_t color = active ? lv_color_hex(DISPLAY_COLOR_MOD_ACTIVE)
                                : lv_color_hex(DISPLAY_COLOR_MOD_INACTIVE);
     lv_obj_set_style_text_color(label, color, 0);
+    lv_obj_invalidate(label);
 }
 
 static void modifier_indicator_apply(struct modifier_indicator_state state) {
@@ -43,6 +44,7 @@ static void modifier_indicator_apply(struct modifier_indicator_state state) {
             if (type == MOD_TYPE_SHIFT && state.caps_word) {
                 lv_obj_set_style_text_color(widget->mod_labels[i],
                     lv_color_hex(DISPLAY_COLOR_MOD_CAPS_WORD), 0);
+                lv_obj_invalidate(widget->mod_labels[i]);
                 continue;
             }
 #endif
@@ -52,8 +54,10 @@ static void modifier_indicator_apply(struct modifier_indicator_state state) {
             lv_obj_t *sep = lv_obj_get_child(widget->obj, i * 2 + 1);
             if (sep) {
                 lv_obj_set_style_bg_color(sep, lv_color_hex(DISPLAY_COLOR_MOD_SEPARATOR), LV_PART_MAIN);
+                lv_obj_invalidate(sep);
             }
         }
+        lv_obj_invalidate(widget->obj);
     }
 }
 

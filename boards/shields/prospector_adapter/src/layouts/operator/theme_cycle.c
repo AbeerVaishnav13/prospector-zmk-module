@@ -1,11 +1,14 @@
 #include "theme_cycle.h"
 
 #include <stdbool.h>
+#include <zephyr/kernel.h>
 #include <zmk/keymap.h>
 #include <zmk/events/layer_state_changed.h>
 #include <zmk/event_manager.h>
 
 #define THEME_CYCLE_MAX_CBS 8
+#define THEME_REFRESH_RETRY_COUNT 3
+#define THEME_REFRESH_RETRY_MS 100
 
 struct operator_theme_colors {
     uint32_t bg;
@@ -35,6 +38,11 @@ uint32_t theme_dyn_bright = 0x00FF00;
 
 static theme_refresh_cb_t refresh_cbs[THEME_CYCLE_MAX_CBS];
 static int refresh_cb_count = 0;
+static struct k_work_delayable theme_refresh_retry_work;
+static uint8_t pending_refresh_retries;
+
+static void notify_theme_refresh(void);
+static void update_theme_for_active_layer(void);
 
 static const struct operator_theme_colors *theme_for_layer_index(uint8_t layer_index) {
     switch (layer_index) {
@@ -75,6 +83,22 @@ static void notify_theme_refresh(void) {
     }
 }
 
+static void theme_refresh_retry_handler(struct k_work *work) {
+    (void)work;
+    update_theme_for_active_layer();
+    notify_theme_refresh();
+
+    if (pending_refresh_retries > 0) {
+        pending_refresh_retries--;
+        k_work_schedule(&theme_refresh_retry_work, K_MSEC(THEME_REFRESH_RETRY_MS));
+    }
+}
+
+static void schedule_theme_refresh_retries(void) {
+    pending_refresh_retries = THEME_REFRESH_RETRY_COUNT;
+    k_work_reschedule(&theme_refresh_retry_work, K_MSEC(THEME_REFRESH_RETRY_MS));
+}
+
 static void update_theme_for_active_layer(void) {
     apply_theme(theme_for_layer_index(zmk_keymap_highest_layer_active()));
 }
@@ -83,6 +107,7 @@ static int operator_theme_layer_listener(const zmk_event_t *eh) {
     (void)eh;
     update_theme_for_active_layer();
     notify_theme_refresh();
+    schedule_theme_refresh_retries();
     return ZMK_EV_EVENT_BUBBLE;
 }
 
@@ -101,6 +126,7 @@ void theme_cycle_start(void) {
     static bool started = false;
     if (started) return;
     started = true;
+    k_work_init_delayable(&theme_refresh_retry_work, theme_refresh_retry_handler);
     update_theme_for_active_layer();
     notify_theme_refresh();
 }
