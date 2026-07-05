@@ -1,104 +1,102 @@
 #include "theme_cycle.h"
 
-#include <zephyr/kernel.h>
+#include <stdbool.h>
+#include <string.h>
+#include <zmk/keymap.h>
+#include <zmk/events/layer_state_changed.h>
+#include <zmk/event_manager.h>
 
-#define THEME_CYCLE_TICK_MS   500
-#define THEME_CYCLE_PERIOD_MS (5 * 60 * 1000)
-#define THEME_CYCLE_STEPS     (THEME_CYCLE_PERIOD_MS / THEME_CYCLE_TICK_MS)
-#define THEME_CYCLE_MAX_CBS   8
-#define THEME_START_HUE_X100  12000
+#define THEME_CYCLE_MAX_CBS 8
 
-#define LUMA_FLOOR_DARK   120000
-#define LUMA_FLOOR_MED    500000
-#define LUMA_FLOOR_BRIGHT 1100000
+struct operator_theme_colors {
+    uint32_t bg;
+    uint32_t dark;
+    uint32_t med;
+    uint32_t bright;
+};
 
+/*
+ * The four shades use the same HSV value/luma tiers as the old cycling theme:
+ * bg v=13, dark v=59 with luma floor, med v=143 with luma floor, bright v=255
+ * with luma floor. That keeps each predefined layer color visually close to
+ * the previous color-wheel shades, only without time-based hue cycling.
+ */
+static const struct operator_theme_colors operator_theme_yellow  = {0x0D0D00, 0x3B3B00, 0x8F8F00, 0xFFFF00};
+static const struct operator_theme_colors operator_theme_green   = {0x000D00, 0x003B00, 0x008F00, 0x00FF00};
+static const struct operator_theme_colors operator_theme_orange  = {0x0D0600, 0x3B1D00, 0x8F4700, 0xFF7F00};
+static const struct operator_theme_colors operator_theme_blue    = {0x00000D, 0x0000A6, 0x2222FF, 0x6262FF};
+static const struct operator_theme_colors operator_theme_red     = {0x0D0000, 0x3B0000, 0xEB0000, 0xFF4646};
+static const struct operator_theme_colors operator_theme_magenta = {0x0D000D, 0x3B003B, 0xAF00AF, 0xFF34FF};
+static const struct operator_theme_colors operator_theme_cyan    = {0x000D0D, 0x003B3B, 0x008F8F, 0x00FFFF};
+
+uint32_t theme_dyn_bg     = 0x000D00;
 uint32_t theme_dyn_dark   = 0x003B00;
 uint32_t theme_dyn_med    = 0x008F00;
 uint32_t theme_dyn_bright = 0x00FF00;
 
 static theme_refresh_cb_t refresh_cbs[THEME_CYCLE_MAX_CBS];
 static int refresh_cb_count = 0;
-static int32_t hue_x100 = THEME_START_HUE_X100;
-static struct k_work_delayable theme_work;
 
-static uint32_t hsv_to_rgb(int32_t h_x100, uint8_t v) {
-    while (h_x100 < 0) h_x100 += 36000;
-    while (h_x100 >= 36000) h_x100 -= 36000;
-
-    int32_t sector = h_x100 / 6000;
-    int32_t frac = h_x100 - sector * 6000;
-
-    uint32_t vv = v;
-    uint32_t p = 0;
-    uint32_t q = (vv * (6000 - frac)) / 6000;
-    uint32_t t = (vv * frac) / 6000;
-
-    uint32_t r, g, b;
-    switch (sector) {
-    case 0: r = vv; g = t;  b = p;  break;
-    case 1: r = q;  g = vv; b = p;  break;
-    case 2: r = p;  g = vv; b = t;  break;
-    case 3: r = p;  g = q;  b = vv; break;
-    case 4: r = t;  g = p;  b = vv; break;
-    default: r = vv; g = p; b = q;  break;
+static const struct operator_theme_colors *theme_for_layer_name(const char *layer_name) {
+    if (!layer_name || !*layer_name) {
+        return &operator_theme_yellow;
     }
 
-    return (r << 16) | (g << 8) | b;
+    if (strcmp(layer_name, "home") == 0) {
+        return &operator_theme_yellow;
+    }
+    if (strcmp(layer_name, "num_sym") == 0) {
+        return &operator_theme_green;
+    }
+    if (strcmp(layer_name, "media") == 0) {
+        return &operator_theme_orange;
+    }
+    if (strcmp(layer_name, "nav") == 0 || strcmp(layer_name, "nav_lh") == 0) {
+        return &operator_theme_blue;
+    }
+    if (strcmp(layer_name, "graphite") == 0) {
+        return &operator_theme_red;
+    }
+    if (strcmp(layer_name, "lh") == 0 || strcmp(layer_name, "rh") == 0) {
+        return &operator_theme_magenta;
+    }
+    if (strcmp(layer_name, "mmv") == 0 || strcmp(layer_name, "msc") == 0) {
+        return &operator_theme_cyan;
+    }
+
+    return &operator_theme_yellow;
 }
 
-static uint32_t hue_tier_color(int32_t h_x100, uint8_t v, int32_t floor) {
-    uint32_t rgb = hsv_to_rgb(h_x100, v);
-    int32_t r = (rgb >> 16) & 0xFF;
-    int32_t g = (rgb >> 8) & 0xFF;
-    int32_t b = rgb & 0xFF;
-    int32_t luma = 2126 * r + 7152 * g + 722 * b;
-
-    if (luma >= floor) {
-        return rgb;
-    }
-
-    if (luma > 0) {
-        int32_t v_new = ((int32_t)v * floor) / luma;
-        if (v_new <= 255) {
-            return hsv_to_rgb(h_x100, (uint8_t)v_new);
-        }
-    }
-
-    uint32_t rgb255 = hsv_to_rgb(h_x100, 255);
-    int32_t r255 = (rgb255 >> 16) & 0xFF;
-    int32_t g255 = (rgb255 >> 8) & 0xFF;
-    int32_t b255 = rgb255 & 0xFF;
-    int32_t luma255 = 2126 * r255 + 7152 * g255 + 722 * b255;
-    int32_t w_num = floor - luma255;
-    int32_t w_den = 2550000 - luma255;
-    if (w_den <= 0 || w_num <= 0) {
-        return rgb255;
-    }
-    int32_t rr = r255 + (w_num * (255 - r255)) / w_den;
-    int32_t gg = g255 + (w_num * (255 - g255)) / w_den;
-    int32_t bb = b255 + (w_num * (255 - b255)) / w_den;
-    if (rr > 255) rr = 255;
-    if (gg > 255) gg = 255;
-    if (bb > 255) bb = 255;
-    return ((uint32_t)rr << 16) | ((uint32_t)gg << 8) | (uint32_t)bb;
+static void apply_theme(const struct operator_theme_colors *theme) {
+    theme_dyn_bg = theme->bg;
+    theme_dyn_dark = theme->dark;
+    theme_dyn_med = theme->med;
+    theme_dyn_bright = theme->bright;
 }
 
-static void theme_work_handler(struct k_work *work) {
-    hue_x100 += 36000 / THEME_CYCLE_STEPS;
-    if (hue_x100 >= 36000) hue_x100 -= 36000;
-
-    theme_dyn_dark   = hue_tier_color(hue_x100, 59,  LUMA_FLOOR_DARK);
-    theme_dyn_med    = hue_tier_color(hue_x100, 143, LUMA_FLOOR_MED);
-    theme_dyn_bright = hue_tier_color(hue_x100, 255, LUMA_FLOOR_BRIGHT);
-
+static void notify_theme_refresh(void) {
     for (int i = 0; i < refresh_cb_count; i++) {
         if (refresh_cbs[i]) {
             refresh_cbs[i]();
         }
     }
-
-    k_work_schedule(&theme_work, K_MSEC(THEME_CYCLE_TICK_MS));
 }
+
+static void update_theme_for_active_layer(void) {
+    const char *layer_name = zmk_keymap_layer_name(
+        zmk_keymap_layer_index_to_id(zmk_keymap_highest_layer_active()));
+    apply_theme(theme_for_layer_name(layer_name));
+}
+
+static int operator_theme_layer_listener(const zmk_event_t *eh) {
+    (void)eh;
+    update_theme_for_active_layer();
+    notify_theme_refresh();
+    return ZMK_EV_EVENT_BUBBLE;
+}
+
+ZMK_LISTENER(operator_theme_layer, operator_theme_layer_listener);
+ZMK_SUBSCRIPTION(operator_theme_layer, zmk_layer_state_changed);
 
 void theme_cycle_register_refresh(theme_refresh_cb_t cb) {
     if (refresh_cb_count >= THEME_CYCLE_MAX_CBS) return;
@@ -112,6 +110,6 @@ void theme_cycle_start(void) {
     static bool started = false;
     if (started) return;
     started = true;
-    k_work_init_delayable(&theme_work, theme_work_handler);
-    k_work_schedule(&theme_work, K_MSEC(THEME_CYCLE_TICK_MS));
+    update_theme_for_active_layer();
+    notify_theme_refresh();
 }

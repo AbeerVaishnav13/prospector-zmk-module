@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 
+extern uint32_t theme_dyn_bg;
 extern uint32_t theme_dyn_dark;
 extern uint32_t theme_dyn_med;
 extern uint32_t theme_dyn_bright;
@@ -12,7 +13,7 @@ extern uint32_t theme_dyn_bright;
 #define DISPLAY_COLOR_MOD_CAPS_WORD      0xCC3333
 
 #define DISPLAY_COLOR_WPM_BAR_ACTIVE     theme_dyn_med
-#define DISPLAY_COLOR_WPM_BAR_INACTIVE   0x0D0208
+#define DISPLAY_COLOR_WPM_BAR_INACTIVE   theme_dyn_bg
 #define DISPLAY_COLOR_WPM_TEXT           theme_dyn_med
 #define DISPLAY_COLOR_WPM_PEAK           0x6B2020
 
@@ -22,7 +23,7 @@ extern uint32_t theme_dyn_bright;
 
 #define DISPLAY_COLOR_BATTERY_FILL       theme_dyn_med
 #define DISPLAY_COLOR_BATTERY_RING       theme_dyn_dark
-#define DISPLAY_COLOR_BATTERY_BG         0x0D0208
+#define DISPLAY_COLOR_BATTERY_BG         theme_dyn_bg
 #define DISPLAY_COLOR_BATTERY_LABEL      theme_dyn_med
 
 #define DISPLAY_COLOR_BATTERY_DISCONNECTED_FILL  0xCC3333
