@@ -40,9 +40,11 @@ static theme_refresh_cb_t refresh_cbs[THEME_CYCLE_MAX_CBS];
 static int refresh_cb_count = 0;
 static struct k_work_delayable theme_refresh_retry_work;
 static uint8_t pending_refresh_retries;
+static const struct operator_theme_colors *pending_refresh_theme;
 
 static void notify_theme_refresh(void);
 static void update_theme_for_active_layer(void);
+static void apply_theme_for_layer(uint8_t layer_index);
 
 static const struct operator_theme_colors *theme_for_layer_index(uint8_t layer_index) {
     switch (layer_index) {
@@ -85,29 +87,42 @@ static void notify_theme_refresh(void) {
 
 static void theme_refresh_retry_handler(struct k_work *work) {
     (void)work;
-    update_theme_for_active_layer();
+    if (pending_refresh_theme) {
+        apply_theme(pending_refresh_theme);
+    }
     notify_theme_refresh();
 
     if (pending_refresh_retries > 0) {
         pending_refresh_retries--;
+    }
+    if (pending_refresh_retries > 0) {
         k_work_schedule(&theme_refresh_retry_work, K_MSEC(THEME_REFRESH_RETRY_MS));
     }
 }
 
-static void schedule_theme_refresh_retries(void) {
+static void schedule_theme_refresh_retries(const struct operator_theme_colors *theme) {
+    pending_refresh_theme = theme;
     pending_refresh_retries = THEME_REFRESH_RETRY_COUNT;
     k_work_reschedule(&theme_refresh_retry_work, K_MSEC(THEME_REFRESH_RETRY_MS));
 }
 
+static void apply_theme_for_layer(uint8_t layer_index) {
+    const struct operator_theme_colors *theme = theme_for_layer_index(layer_index);
+    apply_theme(theme);
+    pending_refresh_theme = theme;
+}
+
 static void update_theme_for_active_layer(void) {
-    apply_theme(theme_for_layer_index(zmk_keymap_highest_layer_active()));
+    apply_theme_for_layer(zmk_keymap_highest_layer_active());
 }
 
 static int operator_theme_layer_listener(const zmk_event_t *eh) {
     (void)eh;
-    update_theme_for_active_layer();
+    uint8_t layer_index = zmk_keymap_highest_layer_active();
+    const struct operator_theme_colors *theme = theme_for_layer_index(layer_index);
+    apply_theme(theme);
     notify_theme_refresh();
-    schedule_theme_refresh_retries();
+    schedule_theme_refresh_retries(theme);
     return ZMK_EV_EVENT_BUBBLE;
 }
 
