@@ -1,7 +1,6 @@
 #include "theme_cycle.h"
 
 #include <stdbool.h>
-#include <string.h>
 #include <zmk/keymap.h>
 #include <zmk/events/layer_state_changed.h>
 #include <zmk/event_manager.h>
@@ -37,34 +36,28 @@ uint32_t theme_dyn_bright = 0x00FF00;
 static theme_refresh_cb_t refresh_cbs[THEME_CYCLE_MAX_CBS];
 static int refresh_cb_count = 0;
 
-static const struct operator_theme_colors *theme_for_layer_name(const char *layer_name) {
-    if (!layer_name || !*layer_name) {
+static const struct operator_theme_colors *theme_for_layer_index(uint8_t layer_index) {
+    switch (layer_index) {
+    case 0:  /* home */
         return &operator_theme_yellow;
-    }
-
-    if (strcmp(layer_name, "home") == 0) {
-        return &operator_theme_yellow;
-    }
-    if (strcmp(layer_name, "num_sym") == 0) {
+    case 1:  /* num_sym */
         return &operator_theme_green;
-    }
-    if (strcmp(layer_name, "media") == 0) {
-        return &operator_theme_orange;
-    }
-    if (strcmp(layer_name, "nav") == 0 || strcmp(layer_name, "nav_lh") == 0) {
-        return &operator_theme_blue;
-    }
-    if (strcmp(layer_name, "graphite") == 0) {
+    case 2:  /* graphite */
         return &operator_theme_red;
-    }
-    if (strcmp(layer_name, "lh") == 0 || strcmp(layer_name, "rh") == 0) {
+    case 3:  /* media */
+        return &operator_theme_orange;
+    case 4:  /* nav */
+    case 5:  /* nav_lh */
+        return &operator_theme_blue;
+    case 6:  /* lh */
+    case 7:  /* rh */
         return &operator_theme_magenta;
-    }
-    if (strcmp(layer_name, "mmv") == 0 || strcmp(layer_name, "msc") == 0) {
+    case 8:  /* mmv */
+    case 9:  /* msc */
         return &operator_theme_cyan;
+    default:
+        return &operator_theme_yellow;
     }
-
-    return &operator_theme_yellow;
 }
 
 static void apply_theme(const struct operator_theme_colors *theme) {
@@ -83,9 +76,7 @@ static void notify_theme_refresh(void) {
 }
 
 static void update_theme_for_active_layer(void) {
-    const char *layer_name = zmk_keymap_layer_name(
-        zmk_keymap_layer_index_to_id(zmk_keymap_highest_layer_active()));
-    apply_theme(theme_for_layer_name(layer_name));
+    apply_theme(theme_for_layer_index(zmk_keymap_highest_layer_active()));
 }
 
 static int operator_theme_layer_listener(const zmk_event_t *eh) {
