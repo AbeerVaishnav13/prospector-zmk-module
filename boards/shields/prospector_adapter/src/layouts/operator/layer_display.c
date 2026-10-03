@@ -6,15 +6,12 @@
 #include <zmk/keymap.h>
 
 #include "display_colors.h"
-#include "theme_cycle.h"
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
 struct layer_display_state {
     uint8_t index;
 };
-
-static struct layer_display_state cached_layer_state;
 
 static void layer_display_apply(struct layer_display_state state) {
     struct zmk_widget_layer_display *widget;
@@ -31,12 +28,7 @@ static void layer_display_apply(struct layer_display_state state) {
 }
 
 static void layer_display_update_cb(struct layer_display_state state) {
-    cached_layer_state = state;
     layer_display_apply(state);
-}
-
-static void layer_display_theme_refresh(void) {
-    layer_display_apply(cached_layer_state);
 }
 
 static struct layer_display_state layer_display_get_state(const zmk_event_t *eh) {
@@ -72,8 +64,6 @@ int zmk_widget_layer_display_init(struct zmk_widget_layer_display *widget, lv_ob
 
     sys_slist_append(&widgets, &widget->node);
     widget_layer_display_init();
-
-    theme_cycle_register_refresh(layer_display_theme_refresh);
 
     return 0;
 }

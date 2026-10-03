@@ -11,7 +11,6 @@
 #include <fonts.h>
 #include <modifier_order.h>
 #include "display_colors.h"
-#include "theme_cycle.h"
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
@@ -25,8 +24,6 @@ struct modifier_indicator_state {
 #ifdef CONFIG_DT_HAS_ZMK_BEHAVIOR_CAPS_WORD_ENABLED
 static bool caps_word_active = false;
 #endif
-
-static struct modifier_indicator_state cached_state;
 
 static void set_modifier_color(lv_obj_t *label, bool active) {
     lv_color_t color = active ? lv_color_hex(DISPLAY_COLOR_MOD_ACTIVE)
@@ -62,12 +59,7 @@ static void modifier_indicator_apply(struct modifier_indicator_state state) {
 }
 
 static void modifier_indicator_update_cb(struct modifier_indicator_state state) {
-    cached_state = state;
     modifier_indicator_apply(state);
-}
-
-static void modifier_indicator_theme_refresh(void) {
-    modifier_indicator_apply(cached_state);
 }
 
 static struct modifier_indicator_state modifier_indicator_get_state(const zmk_event_t *eh) {
@@ -143,8 +135,6 @@ int zmk_widget_modifier_indicator_init(struct zmk_widget_modifier_indicator *wid
 
     sys_slist_append(&widgets, &widget->node);
     widget_modifier_indicator_init();
-
-    theme_cycle_register_refresh(modifier_indicator_theme_refresh);
 
     return 0;
 }

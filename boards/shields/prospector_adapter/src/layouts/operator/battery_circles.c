@@ -9,7 +9,6 @@
 
 #include <fonts.h>
 #include "display_colors.h"
-#include "theme_cycle.h"
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
@@ -282,29 +281,6 @@ static void update_peripheral_display(uint8_t source) {
     }
 }
 
-static void battery_circles_theme_refresh(void) {
-    if (!styles_initialized) return;
-
-    lv_style_set_arc_color(&style_arc_ring_connected, lv_color_hex(DISPLAY_COLOR_BATTERY_RING));
-    lv_style_set_arc_color(&style_arc_ind_connected, lv_color_hex(DISPLAY_COLOR_BATTERY_FILL));
-    lv_style_set_bg_color(&style_label_box_connected, lv_color_hex(DISPLAY_COLOR_BATTERY_FILL));
-    lv_style_set_text_color(&style_battery_label_connected, lv_color_hex(DISPLAY_COLOR_BATTERY_FILL));
-
-    lv_obj_report_style_change(&style_arc_ring_connected);
-    lv_obj_report_style_change(&style_arc_ind_connected);
-    lv_obj_report_style_change(&style_label_box_connected);
-    lv_obj_report_style_change(&style_battery_label_connected);
-
-    for (int i = 0; i < PERIPHERAL_COUNT; i++) {
-        update_peripheral_display(i);
-    }
-
-    struct zmk_widget_battery_circles *widget;
-    SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) {
-        lv_obj_invalidate(widget->obj);
-    }
-}
-
 static void set_battery_level(uint8_t source, uint8_t level) {
     if (source >= PERIPHERAL_COUNT) {
         return;
@@ -534,8 +510,6 @@ int zmk_widget_battery_circles_init(struct zmk_widget_battery_circles *widget, l
 
     widget->initialized = true;
     sys_slist_append(&widgets, &widget->node);
-
-    theme_cycle_register_refresh(battery_circles_theme_refresh);
 
     return 0;
 }

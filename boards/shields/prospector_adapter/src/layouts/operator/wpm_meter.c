@@ -68,26 +68,6 @@ static void wpm_meter_render(int active_bars) {
     }
 }
 
-static void wpm_meter_theme_refresh(void) {
-    struct zmk_widget_wpm_meter *widget;
-    SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) {
-        for (int i = 0; i < WPM_BAR_COUNT; i++) {
-            lv_color_t color = (i < prev_active_bars)
-                ? lv_color_hex(DISPLAY_COLOR_WPM_BAR_ACTIVE)
-                : lv_color_hex(DISPLAY_COLOR_WPM_BAR_INACTIVE);
-            lv_obj_set_style_bg_color(widget->bars[i], color, LV_PART_MAIN);
-            lv_obj_invalidate(widget->bars[i]);
-        }
-        lv_obj_set_style_bg_color(widget->peak_indicator, lv_color_hex(DISPLAY_COLOR_WPM_PEAK), LV_PART_MAIN);
-        lv_obj_invalidate(widget->peak_indicator);
-        lv_obj_set_style_text_color(widget->wpm_label, lv_color_hex(DISPLAY_COLOR_WPM_TEXT), LV_PART_MAIN);
-        lv_obj_invalidate(widget->wpm_label);
-        lv_obj_set_style_text_color(widget->layer_label, lv_color_hex(DISPLAY_COLOR_LAYER_TEXT), LV_PART_MAIN);
-        lv_obj_invalidate(widget->layer_label);
-        lv_obj_invalidate(widget->obj);
-    }
-}
-
 static void wpm_smooth_work_handler(struct k_work *work) {
     float diff = target_wpm - displayed_wpm;
     bool at_target = (diff > -0.5f && diff < 0.5f);
@@ -161,6 +141,9 @@ static void layer_update_cb(struct layer_state state) {
 #endif
 
         lv_label_set_text(widget->layer_label, display_name);
+        lv_obj_set_style_text_color(widget->layer_label,
+                                   lv_color_hex(operator_layer_text_color(state.index)), LV_PART_MAIN);
+        lv_obj_invalidate(widget->layer_label);
     }
 }
 
@@ -234,8 +217,6 @@ int zmk_widget_wpm_meter_init(struct zmk_widget_wpm_meter *widget, lv_obj_t *par
     widget_wpm_meter_layer_init();
 
     k_work_init_delayable(&wpm_smooth_work, wpm_smooth_work_handler);
-
-    theme_cycle_register_refresh(wpm_meter_theme_refresh);
 
     return 0;
 }
