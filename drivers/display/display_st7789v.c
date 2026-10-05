@@ -45,6 +45,9 @@ struct st7789v_config {
 	uint8_t rgb_param[3];
 	uint16_t height;
 	uint16_t width;
+	/* Immutable portrait panel margins; runtime data contains oriented margins. */
+	uint16_t x_offset;
+	uint16_t y_offset;
 	uint8_t ready_time_ms;
 };
 
@@ -275,17 +278,15 @@ static int st7789v_set_orientation(const struct device *dev,
 	uint16_t x_offset = 0;
 	uint16_t y_offset = 0;
 
-	uint16_t row_offset = 0;
-	uint16_t col_offset = 0;
-
-	row_offset = data->y_offset;
-	col_offset = data->x_offset;
+	/* Always derive from panel geometry, never from the previous rotation. */
+	const uint16_t row_offset = config->y_offset;
+	const uint16_t col_offset = config->x_offset;
 
 	switch (orientation) {
 	case DISPLAY_ORIENTATION_NORMAL:
 		tx_data |= ST7789V_MADCTL_MV_NORMAL_MODE;
-		x_offset = data->x_offset;
-		y_offset = data->y_offset;
+		x_offset = col_offset;
+		y_offset = row_offset;
 		break;
 
 	case DISPLAY_ORIENTATION_ROTATED_90:
@@ -302,8 +303,8 @@ static int st7789v_set_orientation(const struct device *dev,
 
 	case DISPLAY_ORIENTATION_ROTATED_270:
 		tx_data |= (ST7789V_MADCTL_MX_RIGHT_TO_LEFT | ST7789V_MADCTL_MV_REVERSE_MODE);
-		x_offset = data->y_offset;
-		y_offset = data->x_offset;
+		x_offset = row_offset;
+		y_offset = col_offset;
 		break;
 
 	default:
@@ -311,11 +312,12 @@ static int st7789v_set_orientation(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	st7789v_set_lcd_margins(dev, x_offset, y_offset);
 	ret = st7789v_transmit(dev, ST7789V_CMD_MADCTL, &tx_data, 1U);
 	if (ret < 0) {
 		return ret;
 	}
+	/* Commit write-window state only after the controller accepted MADCTL. */
+	st7789v_set_lcd_margins(dev, x_offset, y_offset);
 	data->orientation = orientation;
 	LOG_INF("Changed orientation to: '%d'", data->orientation);
 
@@ -560,6 +562,8 @@ static DEVICE_API(display, st7789v_api) = {
 		.rgb_param = DT_INST_PROP(inst, rgb_param),				\
 		.width = DT_INST_PROP(inst, width),					\
 		.height = DT_INST_PROP(inst, height),					\
+		.x_offset = DT_INST_PROP(inst, x_offset),				\
+		.y_offset = DT_INST_PROP(inst, y_offset),				\
 		.ready_time_ms = DT_INST_PROP(inst, ready_time_ms),			\
 	};										\
 											\
