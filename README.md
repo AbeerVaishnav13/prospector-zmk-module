@@ -132,6 +132,33 @@ Then include the brightness behaviors in your keymap:
 
 Use `&inc_bri` and `&dec_bri` in any layer binding to increase and decrease brightness.
 
+### Screen rotation
+
+Include the zero-parameter toggle behavior at the top of your keymap:
+
+```c
+#include <behaviors/display_rotation.dtsi>
+```
+
+Place `&rot_disp` at the desired key position in a layer's `bindings` list.
+Each press reads the display's current landscape orientation and switches it
+180 degrees to the opposite orientation. Release does nothing. The behavior
+runs on the central/dongle, with display work serialized on ZMK's UI queue.
+It does not require manual brightness mode or a separate enable option.
+
+`CONFIG_PROSPECTOR_ROTATE_DISPLAY_180` still controls **startup orientation**:
+
+```ini
+CONFIG_PROSPECTOR_ROTATE_DISPLAY_180=y
+```
+
+Keep `y` if your new upside-down mounting needs the flipped orientation at boot;
+set `n` for the original mounting. This branch's adapter `.conf` enables `y`,
+so set `n` explicitly in your personal dongle config if you want the original
+orientation. Runtime toggles are not saved: restart restores the config default.
+Rebuild and flash the dongle after adding the key binding; rebuild other halves
+as needed if they use the updated shared keymap.
+
 ### Modifiers
 | Name | Description | Default |
 | ---- | ----------- | ------- |

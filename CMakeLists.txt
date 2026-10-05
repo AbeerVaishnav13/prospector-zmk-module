@@ -2,6 +2,12 @@ zephyr_include_directories(include)
 zephyr_include_directories(${APPLICATION_SOURCE_DIR}/include)
 zephyr_library()
 
+# Register shared-keymap behavior even on halves without the adapter.
+if(CONFIG_DT_HAS_ZMK_BEHAVIOR_DISPLAY_ROTATION_TOGGLE_ENABLED)
+        target_sources(app PRIVATE src/behaviors/behavior_display_rotation.c)
+        target_include_directories(app PRIVATE ${ZEPHYR_CURRENT_MODULE_DIR}/include)
+endif()
+
 if(CONFIG_SHIELD_PROSPECTOR_ADAPTER)
 
         add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/drivers/display)

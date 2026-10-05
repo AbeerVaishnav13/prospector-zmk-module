@@ -25,8 +25,11 @@ config PROSPECTOR_STATUS_SCREEN_OPERATOR
 endchoice
 
 config PROSPECTOR_ROTATE_DISPLAY_180
-    bool "Rotate the display 180 degrees"
+    bool "Rotate the display 180 degrees at startup"
     default n
+    help
+        Select the startup orientation. The &rot_disp behavior toggles the
+        current orientation at runtime; reboot restores this config default.
 
 config PROSPECTOR_SHOW_MODIFIERS
     bool "Display modifier key indicators (Cmd, Opt, Ctrl, Shift)"

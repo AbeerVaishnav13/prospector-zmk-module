@@ -1,0 +1,5 @@
+description: Toggle Prospector display orientation by 180 degrees
+
+compatible: "zmk,behavior-display-rotation-toggle"
+
+include: zero_param.yaml

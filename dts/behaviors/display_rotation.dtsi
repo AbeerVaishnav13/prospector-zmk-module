@@ -1,0 +1,8 @@
+/ {
+    behaviors {
+        rot_disp: rot_disp {
+            compatible = "zmk,behavior-display-rotation-toggle";
+            #binding-cells = <0>;
+        };
+    };
+};
