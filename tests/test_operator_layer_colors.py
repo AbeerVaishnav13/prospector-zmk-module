@@ -51,6 +51,15 @@ class OperatorLayerColorsTest(unittest.TestCase):
         self.assertEqual(macros["DISPLAY_COLOR_BLE_ACTIVE_BG"], "OPERATOR_COLOR_MED")
         self.assertEqual(macros["DISPLAY_COLOR_SLOT_CONNECTED_BG"], "OPERATOR_COLOR_MED")
 
+    def test_caps_word_uses_original_amber(self):
+        header = (LAYOUT / "display_colors.h").read_text()
+        macros = dict(line.split()[1:3] for line in header.splitlines()
+                      if line.startswith("#define "))
+        self.assertEqual(int(macros["DISPLAY_COLOR_MOD_CAPS_WORD"], 16), 0xFFBF00)
+        indicator = (LAYOUT / "modifier_indicator.c").read_text()
+        self.assertIn("type == MOD_TYPE_SHIFT && state.caps_word", indicator)
+        self.assertIn("lv_color_hex(DISPLAY_COLOR_MOD_CAPS_WORD)", indicator)
+
     def test_layer_callback_only_updates_layer_label(self):
         source = (LAYOUT / "wpm_meter.c").read_text()
         callback = source.split("static void layer_update_cb(", 1)[1].split(
